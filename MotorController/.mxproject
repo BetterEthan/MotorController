@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=C:/Users/10025/Desktop/test - 副本/Inc
+HeaderPath=C:/Users/10025/Documents/WorkFile/MotorController/MotorController/Inc
 HeaderFiles=stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;
-SourcePath=C:/Users/10025/Desktop/test - 副本/Src
+SourcePath=C:/Users/10025/Documents/WorkFile/MotorController/MotorController/Src
 SourceFiles=stm32f4xx_it.c;stm32f4xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]

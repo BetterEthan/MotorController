@@ -4,7 +4,7 @@
  *      *** Do not modify ! ***
  *
  * Project: 'MotorController' 
- * Target:  'test' 
+ * Target:  'MotorController' 
  */
 
 #ifndef RTE_COMPONENTS_H

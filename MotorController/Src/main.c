@@ -63,12 +63,12 @@ static void MX_USART1_UART_Init(void);
 static void MX_TIM2_Init(void);
                                     
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-                                
+int Set_AB_Voltage(float value);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-void ResetAB_Pin_High();
-void ResetAB_Pin_Low();
+void ResetAB_Pin_High(void);
+void ResetAB_Pin_Low(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -92,13 +92,20 @@ void USER_PWM_SetDutyRatio(TIM_HandleTypeDef *htim,uint32_t Channel,uint8_t valu
     HAL_TIM_PWM_Start(htim, Channel);     
 }  
 
-extern _Bool countTim1;
+extern _Bool countTim;
 float count = 0;
+_Bool flag = 0;
+int percentPWM = 10;
+int testt = 0;
+int SYSCLOCK = 0;
+int HCLKFRQ = 0;
+int PCLK1 = 0;
+int PCLK2 = 0;
 /* USER CODE END 0 */
 
 int main(void)
 {
-	
+
   /* USER CODE BEGIN 1 */
   /* USER CODE END 1 */
 
@@ -127,8 +134,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim2);
 	ResetAB_Pin_Low();
+
 	HAL_Delay(1000);
-//	ResetAB_Pin_High();
+	ResetAB_Pin_High();
+	HAL_Delay(1000);
+//	testt = Set_AB_Voltage(4);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -139,14 +149,37 @@ int main(void)
 
   /* USER CODE BEGIN 3 */
 		//10ms控制周期
-		while(!countTim1);
-		count = count + 0.001f;
+		while(!countTim);
+		countTim = 0;
+		
+		
+
+		count = count + 0.1f;
 		if(count > 100) 
+		{
+			percentPWM += 10;
+			if(percentPWM > 99) percentPWM = 10;
 			count = 0;
-//		USER_PWM_SetDutyRatio(&htim3,TIM_CHANNEL_2,count);  
-		 printf("%d\r\n",1);
-//		
-		USER_PWM_SetDutyRatio(&htim3,TIM_CHANNEL_1,count); 
+			
+			
+			
+			flag = !flag;
+			HAL_GPIO_WritePin(GPIOF,GPIO_PIN_9,flag);
+				
+//			testt = Set_AB_Voltage(17);
+			
+			USER_PWM_SetDutyRatio(&htim3,TIM_CHANNEL_1,99);
+//			percentPWM = 90;
+////		USER_PWM_SetDutyRatio(&htim3,TIM_CHANNEL_2,count);  
+//		 printf("%d\r\n",1);
+		}
+			
+			SYSCLOCK = HAL_RCC_GetSysClockFreq();;
+			HCLKFRQ = HAL_RCC_GetHCLKFreq();
+			PCLK1 = HAL_RCC_GetPCLK1Freq();
+			PCLK2 = HAL_RCC_GetPCLK2Freq();
+		
+
   }
   /* USER CODE END 3 */
 
@@ -210,7 +243,6 @@ void SystemClock_Config(void)
 /* TIM2 init function */
 static void MX_TIM2_Init(void)
 {
-
   TIM_ClockConfigTypeDef sClockSourceConfig;
   TIM_MasterConfigTypeDef sMasterConfig;
 
@@ -236,7 +268,6 @@ static void MX_TIM2_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
-
 }
 
 /* TIM3 init function */
@@ -244,12 +275,12 @@ static void MX_TIM3_Init(void)
 {
 
   TIM_MasterConfigTypeDef sMasterConfig;
-  TIM_OC_InitTypeDef sConfigOC;
+  TIM_OC_InitTypeDef sConfigOC; 
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 83;
+  htim3.Init.Prescaler = 99;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 499;
+  htim3.Init.Period = 83;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   if (HAL_TIM_OC_Init(&htim3) != HAL_OK)
   {
@@ -313,12 +344,23 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct;
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PF9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA4 */
   GPIO_InitStruct.Pin = GPIO_PIN_4;
@@ -337,16 +379,45 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void ResetAB_Pin_High()
+
+//将RESET_AB引脚拉高，高电平为工作状态
+void ResetAB_Pin_High(void)
 {
-	HAL_GPIO_WritePin(GPIOA,4,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_4,GPIO_PIN_SET);
 }
 
-void ResetAB_Pin_Low()
+
+
+//将RESET_AB引脚拉低，低电平为重启状态
+void ResetAB_Pin_Low(void)
 {
-	HAL_GPIO_WritePin(GPIOA,4,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_4,GPIO_PIN_RESET);
 }
+
+
+
+#define MAX_VALUE 24.0f
+#define MIN_VALUE -24.0f
+//设置AB端电压函数
+int Set_AB_Voltage(float value)
+{
+	//占空比
+	int percent = 0;
 	
+	percent = (int)(50.0f - value / MAX_VALUE * 50.0f); 
+	
+	//进行限幅处理
+	if(percent > 99)
+		percent = 99;
+	else if(percent < 2)
+		percent = 2;
+	
+	USER_PWM_SetDutyRatio(&htim3,TIM_CHANNEL_1,percent);
+	
+	return percent;
+}
+
+
 
 #ifdef __GNUC__
   /* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
