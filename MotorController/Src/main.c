@@ -118,7 +118,8 @@ uint8_t STORE_DATA7[400];
 
 uint8_t STDBY[2] = {130,0};
 uint8_t RST[2] = {133,0};
-uint8_t Range_Select[2] = {11,0};
+uint8_t Range_Select0[2] = {11,6};
+uint8_t Range_Select1[2] = {13,6};
 
 uint8_t RD_AUTO_SEQ_EN[3] = {2,0,0};
 uint8_t rece_AUTO_SEQ_EN[3] = {0,0,0};
@@ -150,7 +151,7 @@ float Data4=0;
 float Data5=0;
 float Data6=0;
 float Data7=0;
-float bit = 0.0003125; //2*10.24/(2^16);
+float bit = 0.00007812; //2*10.24/(2^16);
 float bit1 = 6553.0799; //1/(0.5*2*5/32768);
 float bit3 = 0.0003052f; //0.5*4*5/32768;
 float bit2 = 0.000078125f; //5.12/2^16;
@@ -486,13 +487,9 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 
-
+		//AD接收程序，再tim2的中断里调用。周期10ms
     if (htim->Instance == htim2.Instance)
     {
-//			    temp=c;
-//			    printf("temp为： %d\r\n",temp);			  
-//			    c=0;			
-//			  flag=1;
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);	
 					HAL_SPI_Transmit(&hspi3, AUTO_CH, 2 ,100); 		
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
@@ -512,91 +509,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);	
 					HAL_SPI_TransmitReceive(&hspi3, NO_OP, Received_DATA3,4,100); 		
 					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-					
-//					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);	
-//					HAL_SPI_TransmitReceive(&hspi3, NO_OP, Received_DATA4,4,100); 		
-//					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-//					   
-//					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);	
-//					HAL_SPI_TransmitReceive(&hspi3, NO_OP, Received_DATA5,4,100); 		
-//					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET); 
-//		
-//					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);	
-//					HAL_SPI_TransmitReceive(&hspi3, NO_OP, Received_DATA6,4,100); 		
-//					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-//			
-//					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);	
-//					HAL_SPI_TransmitReceive(&hspi3, NO_OP, Received_DATA7,4,100); 		
-//					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-					
-          voltage0 =  -10.24 + (float)((Received_DATA0[2]<<8) + Received_DATA0[3])*bit;
-					if(voltage0 > 0)  
-					{
-							Data0 = voltage0 * bit1;
-	//					  Data0= Data0/2;
-							int16_t a0 = (int16_t)Data0;
-							WR_ch0_Shift[1] = a0 >> 8;
-							WR_ch0_Shift[2] = a0 & 0xff;	
-					}
-					if(voltage0 < 0)	
-					{
-							Data0 = ( voltage0 + 10 ) * bit1;
-	//					  Data0= Data0/2;
-							int16_t a0 = (int16_t)Data0;
-							WR_ch0_Shift[1] = a0 >> 8;
-							WR_ch0_Shift[2] = a0 & 0xff;	
-					}			
-					voltage1 =  -10.24 + (float)((Received_DATA1[2]<<8) + Received_DATA1[3])*bit;		
-					if(voltage1 > 0)
-					{
-							Data1 = voltage1 * bit1;
-	//					  Data1 = Data1 / 2;
-							int16_t a1 = (int16_t)Data1;
-							WR_ch1_Shift[1] = a1 >> 8;
-							WR_ch1_Shift[2] = a1 & 0xff;	
-					}
-					if(voltage1 < 0)	
-					{
-							Data1 = ( voltage1 + 10 ) * bit1;
-	//					  Data1 = Data1 / 2;
-							int16_t a1 = (int16_t)Data1;
-							WR_ch1_Shift[1] = a1 >> 8;
-							WR_ch1_Shift[2] = a1 & 0xff;	
-					}		
+
+          voltage0 =  (float)((Received_DATA0[2]<<8) + Received_DATA0[3])*bit;
+					voltage1 =  (float)((Received_DATA1[2]<<8) + Received_DATA1[3])*bit;		
 					voltage2 =  -10.24 + (float)((Received_DATA2[2]<<8) + Received_DATA2[3])*bit;			
-					if(voltage2 > 0)
-					{
-							Data2 = voltage2 * bit1;
-	//					  Data2 = Data2 / 2;
-							int16_t a2 = (int16_t)Data2;
-							WR_ch2_Shift[1] = a2 >> 8;
-							WR_ch2_Shift[2] = a2 & 0xff;
-					}
-					if(voltage2 < 0)	
-					{
-							Data2 = ( voltage2 + 10 ) * bit1;
-	//					  Data2 = Data2 / 2;
-							int16_t a2 = (int16_t)Data2;
-							WR_ch2_Shift[1] = a2 >> 8;
-							WR_ch2_Shift[2] = a2 & 0xff;	
-					}			
 					voltage3 =  -10.24 + (float)((Received_DATA3[2]<<8) + Received_DATA3[3])*bit;		
-					if(voltage3 > 0)
-					{
-							Data3 = voltage3 * bit1;
-	//					  Data3 = Data3 / 2;
-							int16_t a3 = (int16_t)Data3;
-							WR_ch3_Shift[1] = a3 >> 8;
-							WR_ch3_Shift[2] = a3 & 0xff;
-					}
-					if(voltage3 < 0)	
-					{
-							Data3 = ( voltage3 + 10 ) * bit1;
-	//					  Data3 = Data3 / 2;
-							int16_t a3 = (int16_t)Data3;
-							WR_ch3_Shift[1] = a3 >> 8;
-							WR_ch3_Shift[2] = a3 & 0xff;	
-					}			
 
     }
 
@@ -611,7 +528,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 */
 void ADS8684_Init(void)
 {
-	printf("This is ADS8684 SPI Init\r\n");
+//	printf("This is ADS8684 SPI Init\r\n");
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&hspi3, STDBY, 2, 1000);   //进入STDBY模式
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
@@ -621,9 +538,9 @@ void ADS8684_Init(void)
 	HAL_SPI_TransmitReceive(&hspi3, RD_AUTO_SEQ_EN, rece_AUTO_SEQ_EN,4,1000);   //读autoseq 默认 ff
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 	
-	printf("receive data1 is %d\r\n",rece_AUTO_SEQ_EN[0]);
-	printf("receive data2 is %d\r\n",rece_AUTO_SEQ_EN[1]);
-	printf("receive data3 is %d\r\n",rece_AUTO_SEQ_EN[2]);
+//	printf("receive data1 is %d\r\n",rece_AUTO_SEQ_EN[0]);
+//	printf("receive data2 is %d\r\n",rece_AUTO_SEQ_EN[1]);
+//	printf("receive data3 is %d\r\n",rece_AUTO_SEQ_EN[2]);
 	
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&hspi3, WR_AUTO_SEQ_EN, 3, 1000);    //写autoseq   最后一位1
@@ -633,9 +550,9 @@ void ADS8684_Init(void)
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(&hspi3, RD_AUTO_SEQ_EN, rece_AUTO_SEQ_EN,4,1000);   //读autoseq 默认 ff
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-  printf("write receive data1 is %d\r\n",rece_AUTO_SEQ_EN[0]);
-	printf("write receive data2 is %d\r\n",rece_AUTO_SEQ_EN[1]);
-	printf("write receive data3 is %d\r\n",rece_AUTO_SEQ_EN[2]);
+//  printf("write receive data1 is %d\r\n",rece_AUTO_SEQ_EN[0]);
+//	printf("write receive data2 is %d\r\n",rece_AUTO_SEQ_EN[1]);
+//	printf("write receive data3 is %d\r\n",rece_AUTO_SEQ_EN[2]);
 
 	
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
@@ -643,9 +560,9 @@ void ADS8684_Init(void)
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 //  HAL_Delay(1000);
 	
-	printf("receive data4 is %d\r\n",rece_Feature_Select[0]);
-	printf("receive data5 is %d\r\n",rece_Feature_Select[1]);
-	printf("receive data6 is %d\r\n",rece_Feature_Select[2]);
+//	printf("receive data4 is %d\r\n",rece_Feature_Select[0]);
+//	printf("receive data5 is %d\r\n",rece_Feature_Select[1]);
+//	printf("receive data6 is %d\r\n",rece_Feature_Select[2]);
 	
 	
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
@@ -658,11 +575,11 @@ void ADS8684_Init(void)
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 //	HAL_Delay(1000);
 
-	printf("receive data7 is %d\r\n",rece_Feature_Select[0]);
-	printf("receive data8 is %d\r\n",rece_Feature_Select[1]);
-	printf("receive data9 is %d\r\n",rece_Feature_Select[2]);
-	
-	printf("ADS8684 Intial is Done\r\n");
+//	printf("receive data7 is %d\r\n",rece_Feature_Select[0]);
+//	printf("receive data8 is %d\r\n",rece_Feature_Select[1]);
+//	printf("receive data9 is %d\r\n",rece_Feature_Select[2]);
+//	
+//	printf("ADS8684 Intial is Done\r\n");
 }
 
 /*------------------ ADS8684 RST ---------------------*/
@@ -682,10 +599,16 @@ void ADS8684_STDBY(void)
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 	HAL_Delay(100);
 }
+
 void ADS8684_Range_Select(void)
 {
+	//设置1、2通道为0~5.12V的输入电压范围
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi3, Range_Select, 2, 1000);   //选择ch范围
+	HAL_SPI_Transmit(&hspi3, Range_Select0, 2, 1000);   //选择ch范围
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+	HAL_Delay(100);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(&hspi3, Range_Select1, 2, 1000);   //选择ch范围
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 	HAL_Delay(100);
 }
